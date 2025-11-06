@@ -1,0 +1,11 @@
+# ignore config with real DB password
+web/config.php
+
+# ignore OS/backup files
+*.bak
+*.swp
+*.zip
+.DS_Store
+
+# ignore server uploads (just in case)
+uploads/
