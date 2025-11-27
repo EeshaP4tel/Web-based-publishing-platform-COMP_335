@@ -47,15 +47,39 @@ if ($cs && mysqli_num_rows($cs) > 0) {
 ?>
 
 <h3>Add a comment</h3>
+<?php
+// Show success message
+if (isset($_GET['success'])) {
+    echo "<p style='color:green;'>Comment posted successfully!</p>";
+}
+
+// Show errors from post_comment.php
+if (isset($_SESSION['comment_errors'])) {
+    echo "<ul style='color:red;'>";
+    foreach ($_SESSION['comment_errors'] as $error) {
+        echo "<li>" . htmlspecialchars($error) . "</li>";
+    }
+    echo "</ul>";
+    unset($_SESSION['comment_errors']); // Clear errors after displaying
+}
+?>
+
 <form method="post" action="post_comment.php">
   <input type="hidden" name="item_id" value="<?php echo (int)$item['item_id']; ?>">
-  <label>Your member ID:
-    <select name="member_id">
-      <option value="1">1 (Eesha)</option>
-      <option value="2">2 (Bhavya)</option>
-      <option value="3">3 (A Razk)</option>
-    </select>
-  </label><br><br>
+  
+  <?php if (isset($_SESSION['member_id'])): ?>
+    <input type="hidden" name="member_id" value="<?php echo (int)$_SESSION['member_id']; ?>">
+    <p><strong>Posting as:</strong> <?php echo htmlspecialchars($_SESSION['member_name']); ?></p>
+  <?php else: ?>
+    <label>Your member ID:
+      <select name="member_id" required>
+        <option value="1">1 (Eesha)</option>
+        <option value="2">2 (Bhavya)</option>
+        <option value="3">3 (A Razk)</option>
+      </select>
+    </label><br><br>
+  <?php endif; ?>
+  
   <label>Comment:<br>
     <textarea name="comment_text" rows="3" cols="50" required></textarea>
   </label><br><br>
