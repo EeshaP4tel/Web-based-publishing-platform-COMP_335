@@ -6,7 +6,6 @@
 $items = mysqli_query($cn, "SELECT item_id, title FROM items ORDER BY title");
 $charities = mysqli_query($cn, "SELECT charity_id, charity_name FROM charities ORDER BY charity_name");
 
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $member_id = (int)($_POST['member_id'] ?? 0);
   $item_id = (int)($_POST['item_id'] ?? 0);
@@ -50,18 +49,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <label>Item:
     <select name="item_id">
-      <?php while ($i = $items && mysqli_fetch_assoc($items)) {
-        echo "<option value='".(int)$i['item_id']."'>".htmlspecialchars($i['title'])."</option>";
-      } ?>
+      <?php 
+      if ($items && mysqli_num_rows($items) > 0) {
+          mysqli_data_seek($items, 0); // Reset pointer
+          while ($i = mysqli_fetch_assoc($items)) {
+              echo "<option value='".(int)$i['item_id']."'>".htmlspecialchars($i['title'])."</option>";
+          }
+      } else {
+          echo "<option value=''>No items available</option>";
+      }
+      ?>
     </select>
   </label>
   <br><br>
 
   <label>Charity:
     <select name="charity_id">
-      <?php while ($c = $charities && mysqli_fetch_assoc($charities)) {
-        echo "<option value='".(int)$c['charity_id']."'>".htmlspecialchars($c['charity_name'])."</option>";
-      } ?>
+      <?php 
+      if ($charities && mysqli_num_rows($charities) > 0) {
+          mysqli_data_seek($charities, 0); // Reset pointer
+          while ($c = mysqli_fetch_assoc($charities)) {
+              echo "<option value='".(int)$c['charity_id']."'>".htmlspecialchars($c['charity_name'])."</option>";
+          }
+      } else {
+          echo "<option value=''>No charities available</option>";
+      }
+      ?>
     </select>
   </label>
   <br><br>
