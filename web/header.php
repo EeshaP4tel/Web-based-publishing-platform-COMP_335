@@ -28,21 +28,7 @@ $user_name = $is_logged_in ? $_SESSION['member_name'] : '';
 <header>
   <h2 style="margin:0;">CopyForward (COMP 353)</h2>
   <div class="user-info">
-    <?php if ($is_logged_in): ?>
-      Welcome, <?php echo htmlspecialchars($user_name); ?>! 
-      <a href="profile.php">Profile</a> | 
-      <a href="logout.php">Logout</a>
-    <?php else: ?>
-      <a href="login.php">Login</a> | 
-      <a href="register.php">Register</a>
-    <?php endif; ?>
-  </div>
-  <nav>
-    <a href="home.php">Home</a>
-    <a href="items.php">Items</a>
-    <a href="donate.php">Donate</a>
-    <a href="committees.php">Committees</a>
-    <?php if ($is_logged_in): ?>
+        <?php if ($is_logged_in): ?>
       <a href="profile.php">My Profile</a>
       <?php 
       // Check if user is an author
@@ -52,6 +38,33 @@ $user_name = $is_logged_in ? $_SESSION['member_name'] : '';
       $stmt->store_result();
       if ($stmt->num_rows > 0): ?>
         <a href="upload.php">Upload</a>
+        <a href="my_items.php">My Items</a>
+      <?php endif;
+      $stmt->close();
+      ?>
+    <?php endif; ?>
+  </div>
+    <nav>
+    <a href="home.php">Home</a>
+    <a href="items.php">Items</a>
+    <a href="donate.php">Donate</a>
+    <a href="committees.php">Committees</a>
+    <?php if ($is_logged_in): ?>
+      <a href="profile.php">My Profile</a>
+
+      <?php if (!empty($_SESSION['is_admin']) && $_SESSION['is_admin'] == 1): ?>
+        <a href="admin.php">Admin</a>
+      <?php endif; ?>
+
+      <?php 
+      // Check if user is an author
+      $stmt = $mysqli->prepare("SELECT author_id FROM authors WHERE member_id = ?");
+      $stmt->bind_param("i", $_SESSION['member_id']);
+      $stmt->execute();
+      $stmt->store_result();
+      if ($stmt->num_rows > 0): ?>
+        <a href="upload.php">Upload</a>
+        <a href="my_items.php">My Items</a>
       <?php endif;
       $stmt->close();
       ?>

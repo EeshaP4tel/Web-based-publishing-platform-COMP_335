@@ -21,6 +21,7 @@ CREATE TABLE members (
   organization VARCHAR(120),
   introducer_id INT NULL,
   recovery_email VARCHAR(120),
+  is_admin TINYINT(1) NOT NULL DEFAULT 0,
   join_date DATE DEFAULT (CURRENT_DATE),
   status ENUM('active','suspended','blacklisted') DEFAULT 'active',
   FOREIGN KEY (introducer_id) REFERENCES members(member_id)

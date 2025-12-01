@@ -38,14 +38,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 
 <form method="post">
-  <label>Your member ID:
-    <select name="member_id">
-      <option value="1">1 (Eesha)</option>
-      <option value="2">2 (Bhavya)</option>
-      <option value="3">3 (A Razk)</option>
-    </select>
-  </label>
-  <br><br>
+    <?php if (isset($_SESSION['member_id'])): ?>
+    <input type="hidden" name="member_id" value="<?php echo (int)$_SESSION['member_id']; ?>">
+    <p><strong>Donating as:</strong> <?php echo htmlspecialchars($_SESSION['member_name']); ?></p>
+  <?php else: ?>
+    <label>Your member ID:
+      <select name="member_id">
+        <option value="1">1 (Eesha)</option>
+        <option value="2">2 (Bhavya)</option>
+        <option value="3">3 (A Razk)</option>
+      </select>
+    </label>
+    <br><br>
+  <?php endif; ?>
+
 
   <label>Item:
     <select name="item_id">

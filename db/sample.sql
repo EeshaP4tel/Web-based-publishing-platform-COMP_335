@@ -9,6 +9,10 @@ INSERT INTO authors(member_id,orcid,bio)
 SELECT member_id,'0000-0002-1234-5678','Writes DB texts'
 FROM members WHERE email='eesha@example.com';
 
+INSERT INTO members (name, email, password, organization, is_admin)
+VALUES ('Admin User', 'admin@example.com', 'admin123', 'CFP Admin', 1);
+
+
 
 INSERT INTO items(author_id,title,description) VALUES
 ((SELECT author_id FROM authors LIMIT 1),'Intro to Databases','A gentle intro to DBMS'),

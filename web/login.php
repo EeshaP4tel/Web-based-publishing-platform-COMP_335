@@ -9,23 +9,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pass  = $_POST['password'];
 
     $stmt = $mysqli->prepare("
-        SELECT member_id, name, password 
-        FROM members WHERE email = ?
+        SELECT member_id, name, password, is_admin
+        FROM members 
+        WHERE email = ?
     ");
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $stmt->bind_result($id, $name, $dbpass);
-    $stmt->fetch();
-    $stmt->close();
+$stmt->bind_param("s", $email);
+$stmt->execute();
+$stmt->bind_result($id, $name, $dbpass, $is_admin);
+$stmt->fetch();
+$stmt->close();
 
-    if ($id && $pass === $dbpass) {
-        $_SESSION['member_id'] = $id;
-        $_SESSION['member_name'] = $name;
-        header("Location: profile.php");
-        exit;
-    } else {
-        $errors[] = "Invalid login.";
-    }
+if ($id && $pass === $dbpass) {
+    $_SESSION['member_id']    = $id;
+    $_SESSION['member_name']  = $name;
+    $_SESSION['is_admin']     = (int)$is_admin;
+    header("Location: profile.php");
+    exit;
+} else {
+    $errors[] = "Invalid login.";
+}
+
 }
 ?>
 <!DOCTYPE html>
