@@ -49,6 +49,7 @@ $user_name = $is_logged_in ? $_SESSION['member_name'] : '';
     <a href="items.php">Items</a>
     <a href="donate.php">Donate</a>
     <a href="committees.php">Committees</a>
+    <a href="messages.php">Messages</a>
     <?php if ($is_logged_in): ?>
       <a href="profile.php">My Profile</a>
 

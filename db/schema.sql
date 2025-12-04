@@ -112,4 +112,19 @@ CREATE TABLE plagiarism_votes (
   FOREIGN KEY (member_id) REFERENCES members(member_id)
 );
 
+CREATE TABLE messages (
+  message_id INT AUTO_INCREMENT PRIMARY KEY,
+  sender_id INT NOT NULL,
+  receiver_id INT NOT NULL,
+  item_id INT NOT NULL,
+  comment_id INT NULL,
+  message_text TEXT NOT NULL,
+  is_public TINYINT(1) DEFAULT 0,
+  sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (sender_id) REFERENCES members(member_id),
+  FOREIGN KEY (receiver_id) REFERENCES members(member_id),
+  FOREIGN KEY (item_id) REFERENCES items(item_id),
+  FOREIGN KEY (comment_id) REFERENCES comments(comment_id)
+);
 SET FOREIGN_KEY_CHECKS=1;

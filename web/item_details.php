@@ -1,89 +1,135 @@
-<?php include __DIR__.'/header.php'; ?>
-
 <?php
-$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-if ($id <= 0) { echo "<p>Invalid item id.</p>"; include __DIR__.'/footer.php'; exit; }
+require_once "auth.php";
+require_login();
+require_once "config.php";
+include __DIR__ . "/header.php";
 
-$q = "SELECT i.item_id, i.title, i.description, i.upload_date, m.name AS author_name
-      FROM items i
-      JOIN authors a ON i.author_id=a.author_id
-      JOIN members m ON a.member_id=m.member_id
-      WHERE i.item_id={$id}";
-$info = mysqli_query($cn, $q);
-$item = $info ? mysqli_fetch_assoc($info) : null;
+/* FIX: Accept both ?item_id= and ?id= */
+$item_id = 0;
+
+if (isset($_GET['item_id'])) {
+    $item_id = (int)$_GET['item_id'];
+} elseif (isset($_GET['id'])) {
+    $item_id = (int)$_GET['id'];
+}
+
+if ($item_id <= 0) {
+    echo "<p>Invalid item.</p>";
+    include __DIR__.'/footer.php';
+    exit;
+}
+
+$member_id = $_SESSION['member_id'];
+
+/* Fetch item + author */
+$sql = "
+    SELECT i.item_id, i.title, i.description,
+           a.member_id AS author_member_id,
+           m.name AS author_name
+    FROM items i
+    JOIN authors a ON i.author_id = a.author_id
+    JOIN members m ON a.member_id = m.member_id
+    WHERE i.item_id = ?
+";
+
+$stmt = $mysqli->prepare($sql);
+$stmt->bind_param("i", $item_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$item = $result->fetch_assoc();
 
 if (!$item) {
-  echo "<p>Item not found.</p>";
-  include __DIR__.'/footer.php'; exit;
+    echo "<p>Item not found.</p>";
+    include __DIR__ . "/footer.php";
+    exit;
 }
+
+$is_author = ($member_id == $item['author_member_id']);
 ?>
 
-<h1><?php echo htmlspecialchars($item['title']); ?></h1>
-<p><b>Author:</b> <?php echo htmlspecialchars($item['author_name']); ?></p>
-<p><b>Uploaded:</b> <?php echo htmlspecialchars($item['upload_date']); ?></p>
-<p><?php echo nl2br(htmlspecialchars($item['description'])); ?></p>
+<h2><?= htmlspecialchars($item['title']); ?></h2>
+<p><strong>Author:</strong> <?= htmlspecialchars($item['author_name']); ?></p>
+<p><?= nl2br(htmlspecialchars($item['description'])); ?></p>
 
-<p>
-  <a class="btn" href="download.php?item_id=<?php echo (int)$item['item_id']; ?>">Download</a>
-</p>
+<hr>
+<h3>Comments</h3>
 
-<h2>Comments</h2>
 <?php
-$cs = mysqli_query($cn, "SELECT c.comment_text, c.comment_date, m.name
-                         FROM comments c
-                         JOIN members m ON c.member_id=m.member_id
-                         WHERE c.item_id={$id}
-                         ORDER BY c.comment_date DESC");
-if ($cs && mysqli_num_rows($cs) > 0) {
-  echo "<ul>";
-  while ($c = mysqli_fetch_assoc($cs)) {
-    echo "<li><b>".htmlspecialchars($c['name'])."</b> (".htmlspecialchars($c['comment_date'])."): ".
-         htmlspecialchars($c['comment_text'])."</li>";
-  }
-  echo "</ul>";
-} else {
-  echo "<p>No comments yet.</p>";
-}
+/* Load comments */
+$sql = "
+    SELECT c.comment_id, c.comment_text, c.comment_date,
+           m.name AS commenter_name, c.member_id AS commenter_id
+    FROM comments c
+    JOIN members m ON m.member_id = c.member_id
+    WHERE c.item_id = ?
+    ORDER BY c.comment_date ASC
+";
+
+$stmt = $mysqli->prepare($sql);
+$stmt->bind_param("i", $item_id);
+$stmt->execute();
+$comments = $stmt->get_result();
+
+while ($c = $comments->fetch_assoc()):
 ?>
+    <div style="border:1px solid #ccc; padding:10px; margin:10px 0;">
+        <strong><?= htmlspecialchars($c['commenter_name']) ?></strong>
+        <small>(<?= $c['comment_date'] ?>)</small>
 
-<h3>Add a comment</h3>
-<?php
-// Show success message
-if (isset($_GET['success'])) {
-    echo "<p style='color:green;'>Comment posted successfully!</p>";
-}
+        <p><?= nl2br(htmlspecialchars($c['comment_text'])) ?></p>
 
-// Show errors from post_comment.php
-if (isset($_SESSION['comment_errors'])) {
-    echo "<ul style='color:red;'>";
-    foreach ($_SESSION['comment_errors'] as $error) {
-        echo "<li>" . htmlspecialchars($error) . "</li>";
-    }
-    echo "</ul>";
-    unset($_SESSION['comment_errors']); // Clear errors after displaying
-}
-?>
+        <!-- PUBLIC REPLIES -->
+        <?php
+        $sql = "
+            SELECT m.message_text, m.sent_at, mem.name AS sender_name
+            FROM messages m
+            JOIN members mem ON mem.member_id = m.sender_id
+            WHERE m.comment_id = ? AND m.is_public = 1
+            ORDER BY m.sent_at ASC
+        ";
 
-<form method="post" action="post_comment.php">
-  <input type="hidden" name="item_id" value="<?php echo (int)$item['item_id']; ?>">
-  
-  <?php if (isset($_SESSION['member_id'])): ?>
-    <input type="hidden" name="member_id" value="<?php echo (int)$_SESSION['member_id']; ?>">
-    <p><strong>Posting as:</strong> <?php echo htmlspecialchars($_SESSION['member_name']); ?></p>
-  <?php else: ?>
-    <label>Your member ID:
-      <select name="member_id" required>
-        <option value="1">1 (Eesha)</option>
-        <option value="2">2 (Bhavya)</option>
-        <option value="3">3 (A Razk)</option>
-      </select>
-    </label><br><br>
-  <?php endif; ?>
-  
-  <label>Comment:<br>
-    <textarea name="comment_text" rows="3" cols="50" required></textarea>
-  </label><br><br>
-  <button class="btn" type="submit">Post Comment</button>
+        $rstmt = $mysqli->prepare($sql);
+        $rstmt->bind_param("i", $c['comment_id']);
+        $rstmt->execute();
+        $replies = $rstmt->get_result();
+
+        while ($r = $replies->fetch_assoc()):
+        ?>
+            <div style="margin-left:25px; background:#f4f4f4; padding:8px;">
+                <strong><?= htmlspecialchars($r['sender_name']) ?> (Author Reply):</strong><br>
+                <?= nl2br(htmlspecialchars($r['message_text'])) ?><br>
+                <small><?= $r['sent_at'] ?></small>
+            </div>
+        <?php endwhile; ?>
+
+        <!-- AUTHOR REPLY -->
+        <?php if ($is_author): ?>
+            <form method="POST" action="send_message.php" style="margin-top:10px;">
+                <input type="hidden" name="comment_id" value="<?= $c['comment_id'] ?>">
+                <input type="hidden" name="receiver_id" value="<?= $c['commenter_id'] ?>">
+                <input type="hidden" name="item_id" value="<?= $item_id ?>">
+
+                <textarea name="message_text" required
+                          placeholder="Write your reply..."
+                          style="width:100%; height:60px;"></textarea><br>
+
+                <label>
+                    <input type="checkbox" name="is_public" value="1"> Make public
+                </label><br>
+
+                <button type="submit">Send Reply</button>
+            </form>
+        <?php endif; ?>
+    </div>
+<?php endwhile; ?>
+
+<hr>
+<h3>Add a Comment</h3>
+
+<form method="POST" action="post_comment.php">
+    <input type="hidden" name="item_id" value="<?= $item_id; ?>">
+    <textarea name="comment_text" required style="width:100%; height:80px;"></textarea><br>
+    <button type="submit">Post Comment</button>
 </form>
 
-<?php include __DIR__.'/footer.php'; ?>
+<?php include __DIR__ . "/footer.php"; ?>
